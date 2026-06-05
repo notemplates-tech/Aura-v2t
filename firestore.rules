@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safetynet - default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidSharedNote(data) {
+      return data.keys().hasAll(['title', 'transcript', 'summary', 'createdAt'])
+        && data.title is string && data.title.size() <= 200
+        && data.transcript is string && data.transcript.size() <= 500000
+        && data.summary is string && data.summary.size() <= 100000
+        && data.createdAt == request.time
+        // Optional fields checked if present
+        && (!('detailedAnalysis' in data) || (data.detailedAnalysis is string && data.detailedAnalysis.size() <= 200000))
+        && (!('detectedLanguage' in data) || (data.detectedLanguage is string && data.detectedLanguage.size() <= 10))
+        && (!('tags' in data) || (data.tags is list && data.tags.size() <= 50));
+    }
+
+    // Match block for the collection
+    match /shared_notes/{noteId} {
+      allow get: if isValidId(noteId);
+      allow create: if isValidId(noteId) && isValidSharedNote(incoming());
+      allow list, update, delete: if false;
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "entities": {
+    "SharedNote": {
+      "title": "SharedNote",
+      "description": "A read-only shareable version of a transcribed note.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Title of the exported voice note"
+        },
+        "transcript": {
+          "type": "string",
+          "description": "Raw transcription text"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Generated note summary"
+        },
+        "detailedAnalysis": {
+          "type": "string",
+          "description": "Note detailed analysis"
+        },
+        "sentiment": {
+          "type": "object",
+          "description": "Sentiment score and label"
+        },
+        "detectedLanguage": {
+          "type": "string",
+          "description": "Detected language of the recording"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Keywords or tags associated with the note"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["title", "transcript", "summary", "createdAt"]
+    }
+  },
+  "firestore": {
+    "shared_notes/{noteId}": {
+      "schema": "SharedNote",
+      "description": "Publicly accessible read-only voice notes shared via copyable links."
+    }
+  }
+}
