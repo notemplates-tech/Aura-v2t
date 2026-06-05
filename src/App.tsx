@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { SavedSession, saveSession, getSessions, deleteSession, renameSession, QueuedDriveSync, addQueuedDriveSync, getQueuedDriveSyncs, deleteQueuedDriveSync } from './lib/indexedDbWrapper';
 import { shareNote, getSharedNote } from './lib/firestoreService';
 import { AudioTrimSlider } from './components/AudioTrimSlider';
+import { ExportModal } from './components/ExportModal';
+import { ErrorLogDrawer } from './components/ErrorLogDrawer';
 import { detectSilence, trimAndCompressAudio } from './lib/audioUtils';
 import { useErrorLog } from './hooks/useErrorLog';
 
@@ -2690,237 +2692,35 @@ export default function App() {
       </footer>
 
       {/* Export Preview & Options Modal */}
-      {isExportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#151719] border border-slate-800 rounded-2xl w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden shadow-2xl relative">
-            
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 border-b border-slate-800/80 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-blue-500/10 text-blue-400 rounded-lg">
-                  <Download className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Настройка экспорта документа</h3>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-mono">Выбор формата, предварительный просмотр текста и редактирование метаданных</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setIsExportModalOpen(false)}
-                className="p-1 px-2.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors text-xs flex items-center justify-center"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        exportCustomTitle={exportCustomTitle}
+        setExportCustomTitle={setExportCustomTitle}
+        exportFormat={exportFormat}
+        setExportFormat={setExportFormat}
+        exportIncludeMetadata={exportIncludeMetadata}
+        setExportIncludeMetadata={setExportIncludeMetadata}
+        exportIncludeSentiment={exportIncludeSentiment}
+        setExportIncludeSentiment={setExportIncludeSentiment}
+        exportIncludeSummary={exportIncludeSummary}
+        setExportIncludeSummary={setExportIncludeSummary}
+        exportIncludeTranscript={exportIncludeTranscript}
+        setExportIncludeTranscript={setExportIncludeTranscript}
+        exportIncludeKeywords={exportIncludeKeywords}
+        setExportIncludeKeywords={setExportIncludeKeywords}
+        previewText={previewText}
+        setPreviewText={setPreviewText}
+        handleExecuteExport={handleExecuteExport}
+        generateExportText={generateExportText}
+        triggerToast={triggerToast}
+        sentiment={sentiment}
+        summary={summary}
+        transcript={transcript}
+        tags={tags}
+      />
 
-            {/* Modal Content - Split layout */}
-            <div className="flex-1 overflow-y-auto p-5 grid grid-cols-1 md:grid-cols-12 gap-6 min-h-0">
-              
-              {/* Left Column: Toggles & Options */}
-              <div className="md:col-span-5 flex flex-col gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Название документа / Имя файла</label>
-                  <input 
-                    type="text"
-                    value={exportCustomTitle}
-                    onChange={(e) => setExportCustomTitle(e.target.value)}
-                    className="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 transition-colors"
-                    placeholder="Введите имя готового файла"
-                  />
-                </div>
 
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Целевой формат экспорта</span>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button 
-                      onClick={() => setExportFormat('txt')}
-                      className={`py-2 rounded-xl text-xs font-bold font-mono border transition-all ${
-                        exportFormat === 'txt'
-                          ? 'bg-blue-600 border-blue-500 text-white shadow-[0_0_10px_rgba(37,99,235,0.2)]'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/50'
-                      }`}
-                    >
-                      .TXT
-                    </button>
-                    <button 
-                      onClick={() => setExportFormat('pdf')}
-                      className={`py-2 rounded-xl text-xs font-bold font-mono border transition-all ${
-                        exportFormat === 'pdf'
-                          ? 'bg-blue-600 border-blue-500 text-white shadow-[0_0_10px_rgba(37,99,235,0.2)]'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/50'
-                      }`}
-                    >
-                      .PDF
-                    </button>
-                    <button 
-                      onClick={() => setExportFormat('docx')}
-                      className={`py-2 rounded-xl text-xs font-bold font-mono border transition-all ${
-                        exportFormat === 'docx'
-                          ? 'bg-blue-600 border-blue-500 text-white shadow-[0_0_10px_rgba(37,99,235,0.2)]'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/50'
-                      }`}
-                    >
-                      .DOCX
-                    </button>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-800 space-y-3">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Включить разделы контента</span>
-                  
-                  {/* Toggle list */}
-                  <div className="space-y-2">
-                    <label className="flex items-center justify-between p-2.5 bg-slate-900/40 border border-slate-800 hover:bg-slate-900/70 rounded-xl transition-all cursor-pointer">
-                      <div className="flex flex-col text-left">
-                        <span className="text-xs font-medium text-slate-300">Заголовок файла и метаданные</span>
-                        <span className="text-[9px] text-slate-500">Дата, длительность, язык</span>
-                      </div>
-                      <input 
-                        type="checkbox"
-                        checked={exportIncludeMetadata}
-                        onChange={(e) => setExportIncludeMetadata(e.target.checked)}
-                        className="rounded bg-slate-950 border-slate-800 text-blue-500 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
-                      />
-                    </label>
-
-                    {sentiment && (
-                      <label className="flex items-center justify-between p-2.5 bg-slate-900/40 border border-slate-800 hover:bg-slate-900/70 rounded-xl transition-all cursor-pointer">
-                        <div className="flex flex-col text-left">
-                          <span className="text-xs font-medium text-slate-300">Анализ тональности</span>
-                          <span className="text-[9px] text-slate-500">Общее настроение, оценка, эмодзи</span>
-                        </div>
-                        <input 
-                          type="checkbox"
-                          checked={exportIncludeSentiment}
-                          onChange={(e) => setExportIncludeSentiment(e.target.checked)}
-                          className="rounded bg-slate-950 border-slate-800 text-blue-500 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
-                        />
-                      </label>
-                    )}
-
-                    {summary && (
-                      <label className="flex items-center justify-between p-2.5 bg-slate-900/40 border border-slate-800 hover:bg-slate-900/70 rounded-xl transition-all cursor-pointer">
-                        <div className="flex flex-col text-left">
-                          <span className="text-xs font-medium text-slate-300">Резюме и Сводка ИИ</span>
-                          <span className="text-[9px] text-slate-500">Ключевые моменты или список задач</span>
-                        </div>
-                        <input 
-                          type="checkbox"
-                          checked={exportIncludeSummary}
-                          onChange={(e) => setExportIncludeSummary(e.target.checked)}
-                          className="rounded bg-slate-950 border-slate-800 text-blue-500 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
-                        />
-                      </label>
-                    )}
-
-                    {transcript && (
-                      <label className="flex items-center justify-between p-2.5 bg-slate-900/40 border border-slate-800 hover:bg-slate-900/70 rounded-xl transition-all cursor-pointer">
-                        <div className="flex flex-col text-left">
-                          <span className="text-xs font-medium text-slate-300">Распознанный текст</span>
-                          <span className="text-[9px] text-slate-500">Распознанные реплики участников</span>
-                        </div>
-                        <input 
-                          type="checkbox"
-                          checked={exportIncludeTranscript}
-                          onChange={(e) => setExportIncludeTranscript(e.target.checked)}
-                          className="rounded bg-slate-950 border-slate-800 text-blue-500 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
-                        />
-                      </label>
-                    )}
-
-                    {tags.length > 0 && (
-                      <label className="flex items-center justify-between p-2.5 bg-slate-900/40 border border-slate-800 hover:bg-slate-900/70 rounded-xl transition-all cursor-pointer">
-                        <div className="flex flex-col text-left">
-                          <span className="text-xs font-medium text-slate-300">Выделенные ключевые слова</span>
-                          <span className="text-[9px] text-slate-500">Список извлеченных тегов и тем</span>
-                        </div>
-                        <input 
-                          type="checkbox"
-                          checked={exportIncludeKeywords}
-                          onChange={(e) => setExportIncludeKeywords(e.target.checked)}
-                          className="rounded bg-slate-950 border-slate-800 text-blue-500 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
-                        />
-                      </label>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Interactive Text Preview */}
-              <div className="md:col-span-7 flex flex-col gap-2 min-h-[300px] md:min-h-0">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    📝 Предварительный просмотр готового документа
-                  </span>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(previewText);
-                        triggerToast("Copied preview text to clipboard!", 'success');
-                      }}
-                      className="text-[9px] bg-[#1E2024] hover:bg-slate-800 text-slate-300 rounded px-2.5 py-1 uppercase tracking-wide transition-colors font-semibold"
-                      title="Copy to clipboard"
-                    >
-                      Копировать всё
-                    </button>
-                    <button 
-                      onClick={() => {
-                        const regenerated = generateExportText({
-                          title: exportCustomTitle,
-                          includeMetadata: exportIncludeMetadata,
-                          includeSummary: exportIncludeSummary,
-                          includeTranscript: exportIncludeTranscript,
-                          includeSentiment: exportIncludeSentiment,
-                          includeKeywords: exportIncludeKeywords,
-                        });
-                        setPreviewText(regenerated);
-                      }}
-                      className="text-[9px] bg-slate-950 border border-slate-800 hover:bg-[#1E2024] text-slate-400 rounded px-2.5 py-1 uppercase tracking-wide transition-colors font-semibold"
-                      title="Discard local edits and reload options"
-                    >
-                      Сбросить
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex-1 relative border border-slate-800 bg-[#0A0B0C] rounded-xl flex flex-col min-h-0">
-                  <textarea 
-                    value={previewText}
-                    onChange={(e) => setPreviewText(e.target.value)}
-                    className="flex-1 w-full p-4 bg-transparent text-slate-300 font-mono text-[11px] leading-relaxed resize-none focus:outline-none min-h-[250px] custom-scrollbar"
-                    placeholder="Предварительный просмотр пуст, так как не выбраны разделы."
-                  />
-                  <div className="absolute bottom-2 right-2.5 bg-slate-900/85 backdrop-blur-sm border border-slate-800/50 rounded-md px-2 py-1 text-[9px] font-mono text-slate-500 uppercase tracking-widest select-none">
-                    {previewText.length} симв. | {previewText.split(/\s+/).filter(Boolean).length} слов
-                  </div>
-                </div>
-                <p className="text-[9px] text-slate-500 italic text-left">
-                  💡 Совет: Вы можете редактировать текст прямо в поле выше перед экспортом документа.
-                </p>
-              </div>
-
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-5 border-t border-slate-800/80 bg-slate-950/40 flex items-center justify-end gap-3 shrink-0">
-              <button 
-                onClick={() => setIsExportModalOpen(false)}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
-              >
-                Отмена
-              </button>
-              <button 
-                onClick={handleExecuteExport}
-                disabled={!previewText.trim()}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-900 border border-transparent disabled:border-slate-800 text-white disabled:text-slate-500 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/25 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 active:scale-95"
-              >
-                <Download className="w-3.5 h-3.5" /> Экспортировать (.{exportFormat.toUpperCase()})
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
       {/* Toast Notifications */}
       <AnimatePresence>
         {notification && (
@@ -3102,121 +2902,13 @@ export default function App() {
           </>
         )}
 
-        {isErrorLogOpen && (
-          <>
-            {/* Backdrop overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsErrorLogOpen(false)}
-              className="fixed inset-0 bg-black z-40 cursor-pointer backdrop-blur-xs"
-            />
-
-            {/* Slide-out Panel */}
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-              className="fixed top-0 right-0 h-full w-full sm:max-w-md bg-[#111215] border-l border-slate-800/80 p-6 shadow-2xl z-50 flex flex-col justify-between overflow-hidden text-slate-200"
-            >
-              <div className="flex flex-col h-full min-h-0">
-                {/* Header */}
-                <div className="flex justify-between items-center mb-5 border-b border-slate-800 pb-3 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-red-500" />
-                    <h2 className="text-sm font-bold text-white uppercase tracking-wider">Лог ошибок API</h2>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {errorLogs.length > 0 && (
-                      <button 
-                        onClick={clearErrors}
-                        className="text-[10px] bg-red-950/20 hover:bg-red-950/50 border border-red-900/30 text-red-400 px-2 py-1 rounded transition-colors uppercase font-bold cursor-pointer"
-                      >
-                        Очистить
-                      </button>
-                    )}
-                    <button 
-                      onClick={() => setIsErrorLogOpen(false)}
-                      className="p-1 px-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Subheader Information Block */}
-                <div className="bg-[#1D1214] border border-red-950/40 p-3 rounded-xl mb-4 text-[11px] text-red-300/80 leading-relaxed flex gap-2.5 items-start shrink-0 select-none">
-                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                  <p>Если запросы к серверу API завершаются сбоем (например, из-за превышения размера файла или таймаута модели), технические детали логируются здесь локально для диагностики.</p>
-                </div>
-
-                {/* Scrollable list of errors */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 -mr-2 space-y-3 min-h-0">
-                  {errorLogs.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full py-12 text-slate-600 gap-3">
-                      <Check className="w-10 h-10 opacity-30 text-emerald-400" />
-                      <p className="text-xs uppercase tracking-widest font-bold text-slate-600">Ошибок не обнаружено</p>
-                      <p className="text-[10px] text-slate-500 text-center max-w-[200px]">Отличная работа! Все API-запросы выполняются корректно.</p>
-                    </div>
-                  ) : (
-                    errorLogs.map((errorLog) => (
-                      <div 
-                        key={errorLog.id}
-                        className="flex flex-col gap-2 p-4 rounded-xl border bg-[#151719]/80 border-red-950/30 hover:border-red-900/40 hover:bg-[#1D1719]/30 transition-all text-left relative group/item"
-                      >
-                        <button
-                          onClick={() => removeError(errorLog.id)}
-                          title="Удалить запись"
-                          className="absolute top-3 right-3 p-1 rounded bg-[#2D2024]/50 hover:bg-red-950 text-slate-400 hover:text-white transition-colors cursor-pointer opacity-0 group-hover/item:opacity-100"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-
-                        <div className="pr-6">
-                          <div className="text-xs font-bold text-red-400 leading-tight">
-                            {errorLog.message}
-                          </div>
-                          <div className="flex items-center gap-2 mt-1.5 text-[9px] text-slate-500 font-mono">
-                            <span>🕒 {errorLog.timestamp}</span>
-                            {errorLog.endpoint && (
-                              <span className="bg-slate-900 border border-slate-800 text-slate-400 px-1 py-0.5 rounded leading-none">
-                                {errorLog.endpoint}
-                              </span>
-                            )}
-                            {errorLog.status && (
-                              <span className="bg-red-950/35 border border-red-900/30 text-red-400 px-1 py-0.5 rounded leading-none font-bold">
-                                HTTP {errorLog.status}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {errorLog.technicalDetails && (
-                          <div className="mt-2 pt-2 border-t border-slate-800/60">
-                            <label className="text-[8px] uppercase tracking-wider text-slate-500 font-bold block mb-1">Технический стек / Ответ сервера:</label>
-                            <pre className="text-[9.5px] font-mono text-slate-400 bg-slate-950 border border-slate-900 rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-48 custom-scrollbar">
-                              {errorLog.technicalDetails}
-                            </pre>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                {/* Footer status bar */}
-                <div className="mt-4 pt-4 border-t border-slate-800/80 flex justify-between items-center text-[9px] font-mono text-slate-500 shrink-0">
-                  <span>КОНТЕКСТ ОШИБОК: ЛОКАЛЬНЫЙ</span>
-                  <span className="text-red-400/80 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 animate-pulse" /> Logs stored in memory
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
+        <ErrorLogDrawer
+        isOpen={isErrorLogOpen}
+        onClose={() => setIsErrorLogOpen(false)}
+        errorLogs={errorLogs}
+        clearErrors={clearErrors}
+        removeError={removeError}
+      />
       </AnimatePresence>
     </div>
   );
