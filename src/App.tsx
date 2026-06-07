@@ -1806,11 +1806,11 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0 overflow-y-auto lg:overflow-hidden pb-6 lg:pb-0 max-w-[1400px] w-full mx-auto align-top">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 min-h-0 overflow-y-auto lg:overflow-hidden pb-4 lg:pb-0 max-w-[1400px] w-full mx-auto align-top">
         
-        <section className="col-span-1 lg:col-span-7 flex flex-col gap-6 min-h-0 shrink-0 lg:shrink overflow-y-auto lg:overflow-y-auto custom-scrollbar pr-1 lg:pr-2">
+        <section className="col-span-1 lg:col-span-7 flex flex-col gap-4 sm:gap-6 min-h-0 shrink-0 lg:shrink overflow-y-auto lg:overflow-y-auto custom-scrollbar pr-1 lg:pr-2">
            {/* Record / Upload controls */}
-           <div className="bg-[#151719] border border-slate-800 rounded-2xl p-6 flex flex-col shadow-inner shrink-0 relative">
+           <div className="bg-[#151719] border border-slate-800 rounded-2xl p-4 sm:p-6 flex flex-col shadow-inner shrink-0 relative">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-[10px] text-slate-500 uppercase tracking-widest">Поток ввода</span>
                 {isRecording && <span className={`text-[10px] font-mono ${isPaused ? 'text-yellow-500' : 'text-red-500 animate-pulse'}`}>{isPaused ? 'ПАУЗА' : 'ИДЕТ ЗАПИСЬ...'} {formatDuration(recordingDuration)}</span>}
@@ -1847,7 +1847,7 @@ export default function App() {
               </div>
               
               {isRecording && (
-                <div className="mt-4 bg-[#0A0B0C] rounded-xl overflow-hidden h-16 w-full relative border border-slate-800">
+                <div className="mt-4 bg-[#0A0B0C] rounded-xl overflow-hidden h-12 sm:h-16 w-full relative border border-slate-800">
                   <canvas ref={canvasRef} className="w-full h-full absolute inset-0 z-10"></canvas>
                   <div className="absolute inset-x-0 top-1/2 h-[1px] bg-red-500/20 z-0"></div>
                 </div>
@@ -1933,7 +1933,7 @@ export default function App() {
            </div>
            
            {/* Result feed */}
-           <div className="bg-[#151719] border border-slate-800 rounded-2xl p-6 flex flex-col lg:flex-1 shrink-0 lg:min-h-0 overflow-hidden shadow-inner">
+           <div className="bg-[#151719] border border-slate-800 rounded-2xl p-4 sm:p-6 flex flex-col lg:flex-1 shrink-0 lg:min-h-0 overflow-hidden shadow-inner">
               <div className="flex flex-col gap-4 mb-4 shrink-0">
                 <div className="flex justify-between items-center">
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wide">ИНТЕЛЛЕКТУАЛЬНЫЙ ТРАНСКРИПТ</h3>
@@ -2241,9 +2241,9 @@ export default function App() {
            </div>
         </section>
 
-        <section className="col-span-1 lg:col-span-5 flex flex-col gap-6 min-h-0 shrink-0 lg:shrink overflow-y-auto lg:overflow-y-auto custom-scrollbar pr-1 lg:pr-2">
+        <section className="col-span-1 lg:col-span-5 flex flex-col gap-4 sm:gap-6 min-h-0 shrink-0 lg:shrink overflow-y-auto lg:overflow-y-auto custom-scrollbar pr-1 lg:pr-2">
             {/* Summarization Tools */}
-            <div className="bg-[#1E2024] border border-slate-700 rounded-2xl p-6 flex flex-col gap-4 shrink-0 shadow-lg">
+            <div className="bg-[#1E2024] border border-slate-700 rounded-2xl p-4 sm:p-6 flex flex-col gap-4 shrink-0 shadow-lg">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <h3 className="text-sm font-bold text-white tracking-wide uppercase">РЕЖИМЫ УМНОЙ СВОДКИ</h3>
                 <div className="flex gap-1 overflow-x-auto custom-scrollbar pb-2 sm:pb-0">
@@ -2274,7 +2274,7 @@ export default function App() {
            </div>
 
            {/* Voice-to-Text command console */}
-           <div className="bg-[#1E2024] border border-slate-700 rounded-2xl p-6 flex flex-col gap-4 shrink-0 shadow-lg relative overflow-hidden">
+           <div className="bg-[#1E2024] border border-slate-700 rounded-2xl p-4 sm:p-6 flex flex-col gap-4 shrink-0 shadow-lg relative overflow-hidden">
               {isListening && (
                 <div className="absolute inset-0 border border-blue-500/30 rounded-2xl pointer-events-none animate-pulse" />
               )}
@@ -2351,7 +2351,7 @@ export default function App() {
             </div>
 
             {/* Keywords & Tags Editor */}
-            <div className="bg-[#1E2024] border border-slate-700 rounded-2xl p-6 flex flex-col gap-4 shrink-0 shadow-lg">
+            <div className="bg-[#1E2024] border border-slate-700 rounded-2xl p-4 sm:p-6 flex flex-col gap-4 shrink-0 shadow-lg">
              <h3 className="text-sm font-bold text-white tracking-wide uppercase">КЛЮЧЕВЫЕ СЛОВА</h3>
              <div className="flex flex-wrap gap-2">
                {tags.map(tag => (
@@ -2383,7 +2383,7 @@ export default function App() {
            </div>
 
            {/* Integrations */}
-           <div className="lg:flex-1 bg-[#151719] border border-slate-800 rounded-2xl p-6 flex flex-col gap-4 shrink-0 lg:min-h-0 lg:overflow-hidden shadow-inner">
+           <div className="lg:flex-1 bg-[#151719] border border-slate-800 rounded-2xl p-4 sm:p-6 flex flex-col gap-4 shrink-0 lg:min-h-0 lg:overflow-hidden shadow-inner">
               <h3 className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wide">ЭКСПОРТ И СИНХРОНИЗАЦИЯ</h3>
               
               <div className="flex gap-2">
