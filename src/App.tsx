@@ -964,17 +964,26 @@ export default function App() {
       
       // Attempt client-side audio trimming and downsampling first to heavily shrink the file size!
       // This turns high-fidelity large audio files into much smaller mono WAVs, avoiding Google Drive requirements for most normal files.
-      try {
-        setProcessingState({ stage: 'uploading', progress: 10 });
-        const compressed = await trimAndCompressAudio(audioBlob, trimStart, trimEnd);
-        uploadBlob = compressed.blob;
-        uploadFileName = 'recording.wav';
-        // Since we've pre-trimmed the audio locally, send start and end as 0 to avoid double trimming on the server
-        finalTrimStart = 0;
-        finalTrimEnd = 0;
+
+      const isVideo = audioBlob.type.startsWith('video/');
+      const isTooLargeForClientTrim = audioBlob.size > 15 * 1024 * 1024; // >15MB
+
+      if (!isVideo && !isTooLargeForClientTrim) {
+        try {
+          setProcessingState({ stage: 'uploading', progress: 10 });
+          const compressed = await trimAndCompressAudio(audioBlob, trimStart, trimEnd);
+          uploadBlob = compressed.blob;
+          uploadFileName = 'recording.wav';
+          // Since we've pre-trimmed the audio locally, send start and end as 0 to avoid double trimming on the server
+          finalTrimStart = 0;
+          finalTrimEnd = 0;
+          setProcessingState({ stage: 'uploading', progress: 20 });
+        } catch (e) {
+          console.warn("Client-side audio preprocessing failed, using raw fallback:", e);
+        }
+      } else {
+        console.log(`Skipping client-side trim/compress to prevent OOM. isVideo: ${isVideo}, size: ${(audioBlob.size / (1024 * 1024)).toFixed(2)}MB`);
         setProcessingState({ stage: 'uploading', progress: 20 });
-      } catch (e) {
-        console.warn("Client-side audio preprocessing failed, using raw fallback:", e);
       }
 
       const isLargeFile = uploadBlob.size > 24 * 1024 * 1024; // 24MB threshold to use Google Drive chunks
@@ -1797,11 +1806,11 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0 overflow-y-auto lg:overflow-hidden pb-6 lg:pb-0 max-w-[1400px] w-full mx-auto align-top">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 min-h-0 overflow-y-auto lg:overflow-hidden pb-4 lg:pb-0 max-w-[1400px] w-full mx-auto align-top">
         
-        <section className="col-span-1 lg:col-span-7 flex flex-col gap-6 min-h-0 shrink-0 lg:shrink overflow-y-auto lg:overflow-y-auto custom-scrollbar pr-1 lg:pr-2">
+        <section className="col-span-1 lg:col-span-7 flex flex-col gap-4 sm:gap-6 min-h-0 shrink-0 lg:shrink overflow-y-auto lg:overflow-y-auto custom-scrollbar pr-1 lg:pr-2">
            {/* Record / Upload controls */}
-           <div className="bg-[#151719] border border-slate-800 rounded-2xl p-6 flex flex-col shadow-inner shrink-0 relative">
+           <div className="bg-[#151719] border border-slate-800 rounded-2xl p-4 sm:p-6 flex flex-col shadow-inner shrink-0 relative">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-[10px] text-slate-500 uppercase tracking-widest">Поток ввода</span>
                 {isRecording && <span className={`text-[10px] font-mono ${isPaused ? 'text-yellow-500' : 'text-red-500 animate-pulse'}`}>{isPaused ? 'ПАУЗА' : 'ИДЕТ ЗАПИСЬ...'} {formatDuration(recordingDuration)}</span>}
@@ -1838,7 +1847,7 @@ export default function App() {
               </div>
               
               {isRecording && (
-                <div className="mt-4 bg-[#0A0B0C] rounded-xl overflow-hidden h-16 w-full relative border border-slate-800">
+                <div className="mt-4 bg-[#0A0B0C] rounded-xl overflow-hidden h-12 sm:h-16 w-full relative border border-slate-800">
                   <canvas ref={canvasRef} className="w-full h-full absolute inset-0 z-10"></canvas>
                   <div className="absolute inset-x-0 top-1/2 h-[1px] bg-red-500/20 z-0"></div>
                 </div>
@@ -1924,7 +1933,7 @@ export default function App() {
            </div>
            
            {/* Result feed */}
-           <div className="bg-[#151719] border border-slate-800 rounded-2xl p-6 flex flex-col lg:flex-1 shrink-0 lg:min-h-0 overflow-hidden shadow-inner">
+           <div className="bg-[#151719] border border-slate-800 rounded-2xl p-4 sm:p-6 flex flex-col lg:flex-1 shrink-0 lg:min-h-0 overflow-hidden shadow-inner">
               <div className="flex flex-col gap-4 mb-4 shrink-0">
                 <div className="flex justify-between items-center">
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wide">ИНТЕЛЛЕКТУАЛЬНЫЙ ТРАНСКРИПТ</h3>
@@ -2232,9 +2241,9 @@ export default function App() {
            </div>
         </section>
 
-        <section className="col-span-1 lg:col-span-5 flex flex-col gap-6 min-h-0 shrink-0 lg:shrink overflow-y-auto lg:overflow-y-auto custom-scrollbar pr-1 lg:pr-2">
+        <section className="col-span-1 lg:col-span-5 flex flex-col gap-4 sm:gap-6 min-h-0 shrink-0 lg:shrink overflow-y-auto lg:overflow-y-auto custom-scrollbar pr-1 lg:pr-2">
             {/* Summarization Tools */}
-            <div className="bg-[#1E2024] border border-slate-700 rounded-2xl p-6 flex flex-col gap-4 shrink-0 shadow-lg">
+            <div className="bg-[#1E2024] border border-slate-700 rounded-2xl p-4 sm:p-6 flex flex-col gap-4 shrink-0 shadow-lg">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <h3 className="text-sm font-bold text-white tracking-wide uppercase">РЕЖИМЫ УМНОЙ СВОДКИ</h3>
                 <div className="flex gap-1 overflow-x-auto custom-scrollbar pb-2 sm:pb-0">
@@ -2265,7 +2274,7 @@ export default function App() {
            </div>
 
            {/* Voice-to-Text command console */}
-           <div className="bg-[#1E2024] border border-slate-700 rounded-2xl p-6 flex flex-col gap-4 shrink-0 shadow-lg relative overflow-hidden">
+           <div className="bg-[#1E2024] border border-slate-700 rounded-2xl p-4 sm:p-6 flex flex-col gap-4 shrink-0 shadow-lg relative overflow-hidden">
               {isListening && (
                 <div className="absolute inset-0 border border-blue-500/30 rounded-2xl pointer-events-none animate-pulse" />
               )}
@@ -2342,7 +2351,7 @@ export default function App() {
             </div>
 
             {/* Keywords & Tags Editor */}
-            <div className="bg-[#1E2024] border border-slate-700 rounded-2xl p-6 flex flex-col gap-4 shrink-0 shadow-lg">
+            <div className="bg-[#1E2024] border border-slate-700 rounded-2xl p-4 sm:p-6 flex flex-col gap-4 shrink-0 shadow-lg">
              <h3 className="text-sm font-bold text-white tracking-wide uppercase">КЛЮЧЕВЫЕ СЛОВА</h3>
              <div className="flex flex-wrap gap-2">
                {tags.map(tag => (
@@ -2374,7 +2383,7 @@ export default function App() {
            </div>
 
            {/* Integrations */}
-           <div className="lg:flex-1 bg-[#151719] border border-slate-800 rounded-2xl p-6 flex flex-col gap-4 shrink-0 lg:min-h-0 lg:overflow-hidden shadow-inner">
+           <div className="lg:flex-1 bg-[#151719] border border-slate-800 rounded-2xl p-4 sm:p-6 flex flex-col gap-4 shrink-0 lg:min-h-0 lg:overflow-hidden shadow-inner">
               <h3 className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wide">ЭКСПОРТ И СИНХРОНИЗАЦИЯ</h3>
               
               <div className="flex gap-2">
@@ -2693,7 +2702,7 @@ export default function App() {
       {isExportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
           <div className="bg-[#151719] border border-slate-800 rounded-2xl w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden shadow-2xl relative">
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between p-5 border-b border-slate-800/80 shrink-0">
               <div className="flex items-center gap-2.5">
@@ -2705,7 +2714,7 @@ export default function App() {
                   <p className="text-[10px] text-slate-500 uppercase tracking-widest font-mono">Выбор формата, предварительный просмотр текста и редактирование метаданных</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setIsExportModalOpen(false)}
                 className="p-1 px-2.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors text-xs flex items-center justify-center"
               >
@@ -2715,12 +2724,12 @@ export default function App() {
 
             {/* Modal Content - Split layout */}
             <div className="flex-1 overflow-y-auto p-5 grid grid-cols-1 md:grid-cols-12 gap-6 min-h-0">
-              
+
               {/* Left Column: Toggles & Options */}
               <div className="md:col-span-5 flex flex-col gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Название документа / Имя файла</label>
-                  <input 
+                  <input
                     type="text"
                     value={exportCustomTitle}
                     onChange={(e) => setExportCustomTitle(e.target.value)}
@@ -2732,7 +2741,7 @@ export default function App() {
                 <div className="space-y-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Целевой формат экспорта</span>
                   <div className="grid grid-cols-3 gap-2">
-                    <button 
+                    <button
                       onClick={() => setExportFormat('txt')}
                       className={`py-2 rounded-xl text-xs font-bold font-mono border transition-all ${
                         exportFormat === 'txt'
@@ -2742,7 +2751,7 @@ export default function App() {
                     >
                       .TXT
                     </button>
-                    <button 
+                    <button
                       onClick={() => setExportFormat('pdf')}
                       className={`py-2 rounded-xl text-xs font-bold font-mono border transition-all ${
                         exportFormat === 'pdf'
@@ -2752,7 +2761,7 @@ export default function App() {
                     >
                       .PDF
                     </button>
-                    <button 
+                    <button
                       onClick={() => setExportFormat('docx')}
                       className={`py-2 rounded-xl text-xs font-bold font-mono border transition-all ${
                         exportFormat === 'docx'
@@ -2767,7 +2776,7 @@ export default function App() {
 
                 <div className="pt-2 border-t border-slate-800 space-y-3">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Включить разделы контента</span>
-                  
+
                   {/* Toggle list */}
                   <div className="space-y-2">
                     <label className="flex items-center justify-between p-2.5 bg-slate-900/40 border border-slate-800 hover:bg-slate-900/70 rounded-xl transition-all cursor-pointer">
@@ -2775,7 +2784,7 @@ export default function App() {
                         <span className="text-xs font-medium text-slate-300">Заголовок файла и метаданные</span>
                         <span className="text-[9px] text-slate-500">Дата, длительность, язык</span>
                       </div>
-                      <input 
+                      <input
                         type="checkbox"
                         checked={exportIncludeMetadata}
                         onChange={(e) => setExportIncludeMetadata(e.target.checked)}
@@ -2789,7 +2798,7 @@ export default function App() {
                           <span className="text-xs font-medium text-slate-300">Анализ тональности</span>
                           <span className="text-[9px] text-slate-500">Общее настроение, оценка, эмодзи</span>
                         </div>
-                        <input 
+                        <input
                           type="checkbox"
                           checked={exportIncludeSentiment}
                           onChange={(e) => setExportIncludeSentiment(e.target.checked)}
@@ -2804,7 +2813,7 @@ export default function App() {
                           <span className="text-xs font-medium text-slate-300">Резюме и Сводка ИИ</span>
                           <span className="text-[9px] text-slate-500">Ключевые моменты или список задач</span>
                         </div>
-                        <input 
+                        <input
                           type="checkbox"
                           checked={exportIncludeSummary}
                           onChange={(e) => setExportIncludeSummary(e.target.checked)}
@@ -2819,7 +2828,7 @@ export default function App() {
                           <span className="text-xs font-medium text-slate-300">Распознанный текст</span>
                           <span className="text-[9px] text-slate-500">Распознанные реплики участников</span>
                         </div>
-                        <input 
+                        <input
                           type="checkbox"
                           checked={exportIncludeTranscript}
                           onChange={(e) => setExportIncludeTranscript(e.target.checked)}
@@ -2834,7 +2843,7 @@ export default function App() {
                           <span className="text-xs font-medium text-slate-300">Выделенные ключевые слова</span>
                           <span className="text-[9px] text-slate-500">Список извлеченных тегов и тем</span>
                         </div>
-                        <input 
+                        <input
                           type="checkbox"
                           checked={exportIncludeKeywords}
                           onChange={(e) => setExportIncludeKeywords(e.target.checked)}
@@ -2853,7 +2862,7 @@ export default function App() {
                     📝 Предварительный просмотр готового документа
                   </span>
                   <div className="flex gap-2">
-                    <button 
+                    <button
                       onClick={() => {
                         navigator.clipboard.writeText(previewText);
                         triggerToast("Copied preview text to clipboard!", 'success');
@@ -2863,7 +2872,7 @@ export default function App() {
                     >
                       Копировать всё
                     </button>
-                    <button 
+                    <button
                       onClick={() => {
                         const regenerated = generateExportText({
                           title: exportCustomTitle,
@@ -2884,7 +2893,7 @@ export default function App() {
                 </div>
 
                 <div className="flex-1 relative border border-slate-800 bg-[#0A0B0C] rounded-xl flex flex-col min-h-0">
-                  <textarea 
+                  <textarea
                     value={previewText}
                     onChange={(e) => setPreviewText(e.target.value)}
                     className="flex-1 w-full p-4 bg-transparent text-slate-300 font-mono text-[11px] leading-relaxed resize-none focus:outline-none min-h-[250px] custom-scrollbar"
@@ -2903,13 +2912,13 @@ export default function App() {
 
             {/* Modal Footer */}
             <div className="p-5 border-t border-slate-800/80 bg-slate-950/40 flex items-center justify-end gap-3 shrink-0">
-              <button 
+              <button
                 onClick={() => setIsExportModalOpen(false)}
                 className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
               >
                 Отмена
               </button>
-              <button 
+              <button
                 onClick={handleExecuteExport}
                 disabled={!previewText.trim()}
                 className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-900 border border-transparent disabled:border-slate-800 text-white disabled:text-slate-500 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/25 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 active:scale-95"
@@ -3130,14 +3139,14 @@ export default function App() {
                   </div>
                   <div className="flex items-center gap-2">
                     {errorLogs.length > 0 && (
-                      <button 
+                      <button
                         onClick={clearErrors}
                         className="text-[10px] bg-red-950/20 hover:bg-red-950/50 border border-red-900/30 text-red-400 px-2 py-1 rounded transition-colors uppercase font-bold cursor-pointer"
                       >
                         Очистить
                       </button>
                     )}
-                    <button 
+                    <button
                       onClick={() => setIsErrorLogOpen(false)}
                       className="p-1 px-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
                     >
@@ -3162,7 +3171,7 @@ export default function App() {
                     </div>
                   ) : (
                     errorLogs.map((errorLog) => (
-                      <div 
+                      <div
                         key={errorLog.id}
                         className="flex flex-col gap-2 p-4 rounded-xl border bg-[#151719]/80 border-red-950/30 hover:border-red-900/40 hover:bg-[#1D1719]/30 transition-all text-left relative group/item"
                       >
